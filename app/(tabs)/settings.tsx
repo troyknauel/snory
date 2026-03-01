@@ -6,9 +6,10 @@ import {
   ScrollView,
   TouchableOpacity,
   Linking,
+  Switch,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Info, Globe, Shield, Mail, Volume2, Music2 } from "lucide-react-native";
+import { Info, Globe, Shield, Mail, Volume2, Music2, ChevronRight } from "lucide-react-native";
 import * as Haptics from "expo-haptics";
 import Constants from "expo-constants";
 
@@ -16,143 +17,185 @@ import { COLORS } from "@/constants/colors";
 import { useAudioSettings } from "@/contexts/AudioSettingsContext";
 import { VolumeSlider } from "@/components/VolumeSlider";
 
-export default function SettingsScreen() {
-  const { musicEnabled, musicVolume, voiceVolume, setMusicEnabled, setMusicVolume, setVoiceVolume } = useAudioSettings();
+function SectionHeader({ title }: { title: string }) {
+  return <Text style={styles.sectionTitle}>{title}</Text>;
+}
 
-  const handleEmailPress = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    Linking.openURL("mailto:support@snory.app");
-  };
+function Divider() {
+  return <View style={styles.divider} />;
+}
+
+export default function SettingsScreen() {
+  const {
+    musicEnabled,
+    musicVolume,
+    voiceVolume,
+    setMusicEnabled,
+    setMusicVolume,
+    setVoiceVolume,
+  } = useAudioSettings();
 
   return (
     <View style={styles.container}>
+      {/* Header */}
       <LinearGradient
-        colors={[COLORS.primary, COLORS.white]}
-        style={styles.headerGradient}
+        colors={[COLORS.primary, COLORS.primaryLight, COLORS.background]}
+        style={styles.header}
         start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 1 }}
+        end={{ x: 0.2, y: 1 }}
       >
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Settings</Text>
-        </View>
+        <Text style={styles.headerTitle}>Settings</Text>
       </LinearGradient>
 
       <ScrollView
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Audio</Text>
-          <View style={styles.card}>
-            <View style={styles.infoRow}>
-              <Volume2 size={20} color={COLORS.primary} />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Voice Volume</Text>
+        {/* ── Audio ─────────────────────────────────────────────────── */}
+        <SectionHeader title="Audio" />
+        <View style={styles.card}>
+          {/* Voice volume */}
+          <View style={styles.row}>
+            <View style={styles.rowIcon}>
+              <Volume2 size={18} color={COLORS.primary} strokeWidth={2} />
+            </View>
+            <View style={styles.rowContent}>
+              <Text style={styles.rowLabel}>Voice</Text>
+              <View style={styles.sliderWrap}>
                 <VolumeSlider
                   label=""
                   value={voiceVolume}
-                  onChange={(v) => {
-                    setVoiceVolume(v);
-                  }}
+                  onChange={setVoiceVolume}
                   testID="settings_voice_volume"
                 />
               </View>
             </View>
+          </View>
 
-            <View style={styles.divider} />
+          <Divider />
 
-            <TouchableOpacity
-              style={styles.musicRow}
-              onPress={() => {
+          {/* Atmosphere toggle */}
+          <View style={styles.row}>
+            <View style={styles.rowIcon}>
+              <Music2
+                size={18}
+                color={musicEnabled ? COLORS.primary : COLORS.textTertiary}
+                strokeWidth={2}
+              />
+            </View>
+            <View style={styles.rowContent}>
+              <Text style={styles.rowLabel}>Atmosphere</Text>
+              <Text style={styles.rowSub}>
+                Ambient background sounds
+              </Text>
+            </View>
+            <Switch
+              value={musicEnabled}
+              onValueChange={(v) => {
                 Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-                setMusicEnabled(!musicEnabled);
+                setMusicEnabled(v);
               }}
-              activeOpacity={0.7}
+              trackColor={{
+                false: COLORS.borderLight,
+                true: `${COLORS.primary}60`,
+              }}
+              thumbColor={musicEnabled ? COLORS.primary : COLORS.textTertiary}
               testID="settings_music_toggle"
-            >
-              <Music2 size={20} color={musicEnabled ? COLORS.primary : COLORS.textLight} />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Atmosphere</Text>
-                <Text style={styles.infoValue}>
-                  {musicEnabled ? "On" : "Off"}
-                </Text>
-              </View>
-            </TouchableOpacity>
+            />
+          </View>
 
-            <View style={styles.divider} />
-
-            <View style={styles.infoRow}>
-              <Music2 size={20} color={COLORS.primary} />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Atmosphere Volume</Text>
-                <VolumeSlider
-                  label=""
-                  value={musicVolume}
-                  onChange={(v) => {
-                    setMusicVolume(v);
-                  }}
-                  testID="settings_music_volume"
-                />
+          {musicEnabled && (
+            <>
+              <Divider />
+              <View style={styles.row}>
+                <View style={styles.rowIcon}>
+                  <Music2 size={18} color={COLORS.primary} strokeWidth={2} />
+                </View>
+                <View style={styles.rowContent}>
+                  <Text style={styles.rowLabel}>Atmosphere Volume</Text>
+                  <View style={styles.sliderWrap}>
+                    <VolumeSlider
+                      label=""
+                      value={musicVolume}
+                      onChange={setMusicVolume}
+                      testID="settings_music_volume"
+                    />
+                  </View>
+                </View>
               </View>
+            </>
+          )}
+        </View>
+
+        {/* ── About ─────────────────────────────────────────────────── */}
+        <SectionHeader title="About" />
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <View style={styles.rowIcon}>
+              <Info size={18} color={COLORS.primary} strokeWidth={2} />
+            </View>
+            <View style={styles.rowContent}>
+              <Text style={styles.rowLabel}>Version</Text>
+              <Text style={styles.rowSub}>
+                {Constants.expoConfig?.version ?? "1.0.0"}
+              </Text>
+            </View>
+          </View>
+          <Divider />
+          <View style={styles.row}>
+            <View style={styles.rowIcon}>
+              <Globe size={18} color={COLORS.primary} strokeWidth={2} />
+            </View>
+            <View style={styles.rowContent}>
+              <Text style={styles.rowLabel}>Languages</Text>
+              <Text style={styles.rowSub}>English, Español</Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>About</Text>
-          <View style={styles.card}>
-            <View style={styles.infoRow}>
-              <Info size={20} color={COLORS.primary} />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>App Version</Text>
-                <Text style={styles.infoValue}>{Constants.expoConfig?.version || "1.0.0"}</Text>
-              </View>
+        {/* ── Privacy ───────────────────────────────────────────────── */}
+        <SectionHeader title="Privacy" />
+        <View style={styles.card}>
+          <View style={styles.row}>
+            <View style={styles.rowIcon}>
+              <Shield size={18} color={COLORS.primary} strokeWidth={2} />
             </View>
-            <View style={styles.divider} />
-            <View style={styles.infoRow}>
-              <Globe size={20} color={COLORS.primary} />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Languages</Text>
-                <Text style={styles.infoValue}>English, Español</Text>
-              </View>
+            <View style={styles.rowContent}>
+              <Text style={styles.rowLabel}>Your Data</Text>
+              <Text style={styles.rowSub}>
+                Stories are stored only on your device. No personal data is collected or shared.
+              </Text>
             </View>
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Legal</Text>
-          <View style={styles.card}>
-            <View style={styles.infoRow}>
-              <Shield size={20} color={COLORS.primary} />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Privacy & Data</Text>
-                <Text style={styles.infoDescription}>
-                  Your stories are stored locally on your device. We don&apos;t collect or share any personal data.
-                </Text>
-              </View>
+        {/* ── Support ───────────────────────────────────────────────── */}
+        <SectionHeader title="Support" />
+        <TouchableOpacity
+          style={styles.card}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+            Linking.openURL("mailto:support@snory.app");
+          }}
+          activeOpacity={0.7}
+        >
+          <View style={styles.row}>
+            <View style={styles.rowIcon}>
+              <Mail size={18} color={COLORS.primary} strokeWidth={2} />
             </View>
+            <View style={styles.rowContent}>
+              <Text style={styles.rowLabel}>Contact Us</Text>
+              <Text style={styles.rowSub}>support@snory.app</Text>
+            </View>
+            <ChevronRight size={16} color={COLORS.textTertiary} strokeWidth={2} />
           </View>
-        </View>
+        </TouchableOpacity>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Support</Text>
-          <TouchableOpacity
-            style={styles.card}
-            onPress={handleEmailPress}
-            activeOpacity={0.7}
-          >
-            <View style={styles.infoRow}>
-              <Mail size={20} color={COLORS.primary} />
-              <View style={styles.infoContent}>
-                <Text style={styles.infoLabel}>Contact Us</Text>
-                <Text style={styles.infoValue}>support@snory.app</Text>
-              </View>
-            </View>
-          </TouchableOpacity>
-        </View>
-
+        {/* Footer */}
         <View style={styles.footer}>
-          <Text style={styles.footerText}>Made with ✨ for young storytellers</Text>
+          <Text style={styles.footerText}>
+            Made with ✨ for young storytellers
+          </Text>
         </View>
       </ScrollView>
     </View>
@@ -160,91 +203,91 @@ export default function SettingsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: COLORS.white,
-  },
-  headerGradient: {
-    paddingTop: 60,
-    paddingBottom: 24,
-    paddingHorizontal: 20,
-  },
+  container: { flex: 1, backgroundColor: COLORS.background },
+
   header: {
-    gap: 4,
+    paddingTop: 64,
+    paddingHorizontal: 20,
+    paddingBottom: 24,
   },
   headerTitle: {
     fontSize: 32,
-    fontWeight: "bold" as const,
-    color: COLORS.white,
+    fontWeight: "800" as const,
+    color: COLORS.cream,
+    letterSpacing: -0.5,
   },
-  scrollContent: {
-    padding: 20,
-    paddingBottom: 40,
+
+  scroll: {
+    padding: 16,
+    paddingBottom: 48,
   },
-  section: {
-    marginBottom: 24,
-  },
+
   sectionTitle: {
-    fontSize: 13,
-    fontWeight: "600" as const,
-    color: COLORS.textLight,
+    fontSize: 12,
+    fontWeight: "700" as const,
+    color: COLORS.textTertiary,
     textTransform: "uppercase" as const,
-    letterSpacing: 0.5,
-    marginBottom: 12,
+    letterSpacing: 1,
+    marginTop: 20,
+    marginBottom: 8,
     paddingHorizontal: 4,
   },
+
   card: {
-    backgroundColor: COLORS.white,
-    borderRadius: 16,
-    padding: 16,
+    backgroundColor: COLORS.surface,
+    borderRadius: 20,
+    overflow: "hidden",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
+    shadowOpacity: 0.05,
     shadowRadius: 8,
-    elevation: 3,
-    borderWidth: 1,
-    borderColor: "#F3F4F6",
+    elevation: 2,
   },
-  infoRow: {
+
+  row: {
     flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
+    alignItems: "center",
+    padding: 16,
+    gap: 14,
   },
-  musicRow: {
-    flexDirection: "row",
-    alignItems: "flex-start",
-    gap: 12,
+  rowIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: COLORS.primaryMuted,
+    alignItems: "center",
+    justifyContent: "center",
   },
-  infoContent: {
+  rowContent: {
     flex: 1,
-    gap: 4,
+    gap: 3,
   },
-  infoLabel: {
-    fontSize: 16,
+  rowLabel: {
+    fontSize: 15,
     fontWeight: "600" as const,
     color: COLORS.text,
   },
-  infoValue: {
-    fontSize: 14,
-    color: COLORS.textLight,
+  rowSub: {
+    fontSize: 13,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
   },
-  infoDescription: {
-    fontSize: 14,
-    color: COLORS.textLight,
-    lineHeight: 20,
+  sliderWrap: {
+    marginTop: 10,
   },
+
   divider: {
     height: 1,
-    backgroundColor: "#F3F4F6",
-    marginVertical: 16,
+    backgroundColor: COLORS.borderLight,
+    marginHorizontal: 16,
   },
+
   footer: {
-    paddingVertical: 24,
+    paddingVertical: 32,
     alignItems: "center",
   },
   footerText: {
-    fontSize: 14,
-    color: COLORS.textLight,
-    textAlign: "center",
+    fontSize: 13,
+    color: COLORS.textTertiary,
   },
 });

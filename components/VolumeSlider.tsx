@@ -1,5 +1,6 @@
 import React, { useMemo, useRef } from "react";
 import { PanResponder, StyleSheet, Text, View } from "react-native";
+import { COLORS } from "@/constants/colors";
 
 interface VolumeSliderProps {
   label: string;
@@ -8,7 +9,7 @@ interface VolumeSliderProps {
   testID?: string;
 }
 
-const clamp01 = (v: number) => Math.max(0, Math.min(1, v));
+const clamp = (v: number) => Math.max(0, Math.min(1, v));
 
 export const VolumeSlider = React.memo(function VolumeSlider({
   label,
@@ -17,73 +18,69 @@ export const VolumeSlider = React.memo(function VolumeSlider({
   testID,
 }: VolumeSliderProps) {
   const trackWidthRef = useRef<number>(1);
+  const pct = useMemo(() => clamp(value), [value]);
 
-  const percent = useMemo(() => clamp01(value), [value]);
-
-  const panResponder = useMemo(
+  const pan = useMemo(
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
         onMoveShouldSetPanResponder: () => true,
-        onPanResponderGrant: (evt) => {
-          const x = evt.nativeEvent.locationX;
-          const w = trackWidthRef.current;
-          onChange(clamp01(x / w));
-        },
-        onPanResponderMove: (evt) => {
-          const x = evt.nativeEvent.locationX;
-          const w = trackWidthRef.current;
-          onChange(clamp01(x / w));
-        },
+        onPanResponderGrant: (evt) =>
+          onChange(clamp(evt.nativeEvent.locationX / trackWidthRef.current)),
+        onPanResponderMove: (evt) =>
+          onChange(clamp(evt.nativeEvent.locationX / trackWidthRef.current)),
       }),
     [onChange]
   );
 
   return (
     <View style={styles.container} testID={testID}>
-      <View style={styles.header}>
-        <Text style={styles.label}>{label}</Text>
-        <Text style={styles.valueText}>{Math.round(percent * 100)}%</Text>
-      </View>
-
+      {label ? (
+        <View style={styles.row}>
+          <Text style={styles.label}>{label}</Text>
+          <Text style={styles.pctText}>{Math.round(pct * 100)}%</Text>
+        </View>
+      ) : null}
       <View
         style={styles.track}
         onLayout={(e) => {
           trackWidthRef.current = Math.max(1, e.nativeEvent.layout.width);
         }}
-        {...panResponder.panHandlers}
+        {...pan.panHandlers}
       >
-        <View style={[styles.fill, { width: `${percent * 100}%` }]} />
-        <View style={[styles.thumb, { left: `${percent * 100}%` }]} />
+        <View style={[styles.fill, { width: `${pct * 100}%` }]} />
+        <View
+          style={[
+            styles.thumb,
+            { left: `${pct * 100}%` as any },
+          ]}
+        />
       </View>
     </View>
   );
 });
 
 const styles = StyleSheet.create({
-  container: {
-    gap: 10,
-  },
-  header: {
+  container: { gap: 8 },
+  row: {
     flexDirection: "row",
-    alignItems: "baseline",
     justifyContent: "space-between",
+    alignItems: "center",
   },
   label: {
-    fontSize: 14,
-    fontWeight: "700" as const,
-    color: "#2C3E50",
-  },
-  valueText: {
     fontSize: 13,
+    fontWeight: "600" as const,
+    color: COLORS.textSecondary,
+  },
+  pctText: {
+    fontSize: 12,
     fontWeight: "700" as const,
-    color: "#546E7A",
+    color: COLORS.primary,
   },
   track: {
-    height: 14,
-    borderRadius: 999,
-    backgroundColor: "#EEF2F7",
-    overflow: "hidden",
+    height: 10,
+    borderRadius: 100,
+    backgroundColor: COLORS.primaryMuted,
     justifyContent: "center",
   },
   fill: {
@@ -91,16 +88,22 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     bottom: 0,
-    backgroundColor: "#6BA3C0",
+    borderRadius: 100,
+    backgroundColor: COLORS.primary,
   },
   thumb: {
     position: "absolute",
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: "#FFFFFF",
-    borderWidth: 2,
-    borderColor: "#6BA3C0",
-    marginLeft: -9,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: COLORS.surface,
+    borderWidth: 2.5,
+    borderColor: COLORS.primary,
+    marginLeft: -10,
+    shadowColor: COLORS.primary,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 4,
   },
 });
